@@ -6,7 +6,7 @@
 
 <br/>
 
-| 动作           | Label |
+| Target action  | Label |
 | -------------- | ----- |
 | Left Rotation  | 0     |
 | Right Rotation | 1     |
