@@ -31,7 +31,3 @@
 <br/>
 
 <br/>
-
-EMG电极位置
-
-![image](https://github.com/Diregie-J/Video-Player-Controlled-by-Action-Recognition/blob/main/IMG/channel_places.png)
