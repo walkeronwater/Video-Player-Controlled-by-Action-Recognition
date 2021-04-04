@@ -38,7 +38,6 @@ def nnClassifier(rtSample, model):
 def cnnClassifier(raw_signal, model):
     raw_signal = np.expand_dims(raw_signal, axis=0)
 
-    print(raw_signal.shape)
-
     predictResult = model.predict(raw_signal)
+    print(predictResult)
     return predictResult

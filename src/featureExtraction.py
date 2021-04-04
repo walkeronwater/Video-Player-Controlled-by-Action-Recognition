@@ -11,7 +11,7 @@ import csv
 #This file is to calculate the feature matrix of a 3-channel signal segment. 
 
 def prep_highpass(sig):
-    b, a = signal.butter(3, 3/50, 'highpass')
+    b, a = signal.butter(3, 1/50, 'highpass')
     w, h = signal.freqs(b,a)
     # plt.semilogx(w, 20 * np.log10(abs(h)))
 
@@ -23,70 +23,82 @@ def prep_highpass(sig):
 
 def getFeatureVector(signalSeg):
     featureVector = []
-    for sig in signalSeg:
-        mav=0
-        wl=0
-        ssc=0
-        rms=0
-        meanFreq=0.0
-        medianFreq=0.0
-        meanPower=0.0
-        vcf=0.0
+    sigPart=[[],[]]
+    for sigUnfiltered in signalSeg:
+        sigPart[0]=sigUnfiltered[0:150]
+        sigPart[1]=sigUnfiltered[150:len(sigUnfiltered)]
+        for sig in sigPart:
+            sig = prep_highpass(sig)
+            # print(sig)
+            mav=0
+            wl=0
+            ssc=0
+            rms=0
+            meanFreq=0.0
+            medianFreq=0.0
+            meanPower=0.0
+            vcf=0.0
 
-        # temporary variables
-        fs=100
-        T=1/fs
-        sscThreshold=0
-        abs_sum_temp=0
-        ssc_temp=0
-        rms_temp=0
-        freq_temp, psd_temp = signal.welch(sig, fs)
-        nominatorValue_temp=0
-        denominatorValue_temp=0
-        sm2_temp=0
-        
+            # temporary variables
+            fs=100
+            T=1/fs
+            sscThreshold=0
+            abs_sum_temp=0
+            ssc_temp=0
+            rms_temp=0
+            freq_temp, psd_temp = signal.welch(sig, fs)
+            nominatorValue_temp=0
+            denominatorValue_temp=0
+            sm2_temp=0
+            
 
-        for i in range(len(sig)):
-            abs_sum_temp += abs(int(sig[i]))
-            rms_temp += sig[i]
+            for i in range(len(sig)):
+                abs_sum_temp += abs(int(sig[i]))
+                rms_temp += abs(int(sig[i]))**2
 
-            if(i>0):
-                wl += abs(int(sig[i]) - int(sig[i-1]))
-            if(i>1):
-                ssc_temp = (int(sig[i-1]) - int(sig[i-2])) * (int(sig[i-1]) - int(sig[i]))
-                if ssc_temp >= sscThreshold:
-                    ssc += 1
-        mav = abs_sum_temp/len(sig)
-        rms = math.sqrt(rms_temp/len(sig))
+                if(i>0):
+                    wl += abs(int(sig[i]) - int(sig[i-1]))
+                if(i>1):
+                    ssc_temp = (int(sig[i-1]) - int(sig[i-2])) * (int(sig[i-1]) - int(sig[i]))
+                    if ssc_temp >= sscThreshold:
+                        ssc += 1
+            mav = abs_sum_temp/len(sig)
+            rms = math.sqrt(rms_temp/len(sig))
 
-        for j in range(len(freq_temp)):
-            nominatorValue_temp += freq_temp[j]*psd_temp[j]
-            denominatorValue_temp += psd_temp[j]
-            sm2_temp += np.square(freq_temp[j])*psd_temp[j]
-        
-        meanFreq = nominatorValue_temp/denominatorValue_temp
-        medianFreq = freq_temp[np.argsort(psd_temp)[len(psd_temp)//2]]
-        meanPower = denominatorValue_temp/len(freq_temp)
-        vcf = sm2_temp/denominatorValue_temp - np.square(nominatorValue_temp/denominatorValue_temp)
-        if denominatorValue_temp==0:
-            print('divide by zero problem -- causing meanFreq and vcf invalid -- ignored')
-            meanFreq=0
-            vcf=0
+            for j in range(len(freq_temp)):
+                nominatorValue_temp += freq_temp[j]*psd_temp[j]
+                denominatorValue_temp += psd_temp[j]
+                sm2_temp += np.square(freq_temp[j])*psd_temp[j]
+            
+            meanFreq = nominatorValue_temp/denominatorValue_temp
+            medianFreq = freq_temp[np.argsort(psd_temp)[len(psd_temp)//2]]
+            meanPower = denominatorValue_temp/len(freq_temp)
+            vcf = sm2_temp/denominatorValue_temp - np.square(nominatorValue_temp/denominatorValue_temp)
+            if denominatorValue_temp==0:
+                print('divide by zero problem -- causing meanFreq and vcf invalid -- ignored')
+                meanFreq=0
+                vcf=0
 
-        timeDomainFeature = [mav, wl, ssc, rms]
-        frequentDomainFeature = [meanPower]
+            timeDomainFeature = [mav, wl, ssc, rms]
+            frequentDomainFeature = [meanFreq, meanPower, vcf]
 
-        featuresForOneChannel = timeDomainFeature
-        featuresForOneChannel.extend(frequentDomainFeature)
-        featureVector.extend(featuresForOneChannel)
+            featuresForOneChannel = timeDomainFeature
+            featuresForOneChannel.extend(frequentDomainFeature)
+            featureVector.extend(featuresForOneChannel)
     return featureVector
 
 
 if __name__ == "__main__":
-    dummyData=[[24, 198, 945],[13,612,124]]
-    with open('eggs.csv', 'w+', newline='') as csvfile:
-        featureCSV = csv.writer(csvfile)
-        featureCSV.writerows(dummyData)
+    dummy1=[m for m in range(300)]
+    dummyData=[]
+    dummyData.append(dummy1)
+    dummyData.append(dummy1)
+    dummyData.append(dummy1)
+
+    print(len(getFeatureVector(dummyData)))
+    # with open('eggs.csv', 'w+', newline='') as csvfile:
+    #     featureCSV = csv.writer(csvfile)
+    #     featureCSV.writerows(dummyData)
 
     # emg_1_csv={'d': [] , 'u': [], 'l': [], 'r': [], 'f': []}
     # emg_2_csv={'d': [] , 'u': [], 'l': [], 'r': [], 'f': []}

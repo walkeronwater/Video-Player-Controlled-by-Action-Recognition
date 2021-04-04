@@ -5,8 +5,8 @@ import numpy as np
 '''jumpThreshold = 20
 valueLimit = 100'''
 
-jumpThreshold = 10
-valueLimit = 100
+jumpThreshold = 20
+valueLimit = 150
 
 #Calculate the value of a point preprocessed
 def getKnnForwardMean(dataList, index, k):

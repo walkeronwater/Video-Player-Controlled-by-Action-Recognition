@@ -10,15 +10,15 @@ import time
 # k and n are used to detect whether a motion happens
 k = 10
 n = 10
-winWidth = 200
+winWidth = 300
 
-ser = serial.Serial('COM9', 19200)
+ser = serial.Serial('COM3', 19200)
 f = open('./standardisation.txt', 'r')
 mean = f.readline()
 mean = float(mean)
 std = f.readline()
 std = float(std)
-model = load_model('./ML_models/cnn.h5')
+model = load_model('./ML_models/cnnsgf.h5')
 
 print(mean)
 print(std)
@@ -86,7 +86,10 @@ if __name__ == '__main__':
                 print(np.array(signalSegmentArr).shape)
    
 
-                rr.printResultsCNN(signalSegmentArr, model)
+                outputV=rr.printResultsCNN(signalSegmentArr, model)
+                f=open('result.txt','w')
+                f.write('['+str(outputV)+']')
+                f.close()
                 # Plot signal segment
                 segCounter = segCounter + 1
                 '''if segCounter == 10:

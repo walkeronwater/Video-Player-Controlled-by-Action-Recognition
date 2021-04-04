@@ -10,6 +10,8 @@ import pickle
 import joblib
 import pandas as pd
 import numpy as np
+from keras.models import load_model
+import time
 
 
 # k and n are used to detect whether a motion happens
@@ -20,7 +22,7 @@ winWidth = 300
 fname = './ML_Models/svm_model.pkl'
 model = joblib.load(open(fname, 'rb'))
 # model = load_model('./ML_models/useable/ann_mav-ssc-wl-rms-mp.h5')
-# model = load_model('./ML_models/ann_model.h5')
+# model = load_model('./ML_models/ann_model_noRMS.h5')
 # model_cnn = load_model('./src/ML_models/cnn.h5')
 port = "COM9"
 baudrate = 19200
@@ -40,9 +42,11 @@ pl = open(predictionLog, 'w')
 
 
 if __name__ == '__main__':
+    time.sleep(1)
+    smoothSig=[]
     valid = False
     recordOrNot = False
-    numOfChannel = len(ser.readline().decode().split(" "))
+    numOfChannel = 3
     signalSegment = []
     bufferList = []
     recordTimesCounter = 0
@@ -56,7 +60,8 @@ if __name__ == '__main__':
         signalSegment.append([])
         counter = counter + 1
     # print(signalSegment)
-
+    ser.flushInput()
+    ser.flushOutput()
     # Real-time reading
     while True:
         data = ser.readline()
@@ -88,8 +93,8 @@ if __name__ == '__main__':
         else:
 
             if recordTimesCounter >= winWidth: #means reading is over
-                for sig in signalSegment:
-                    smoothSig.append(tools.knnForwardRegression(sig,k))
+                # for sig in signalSegment:
+                #     smoothSig.append(tools.knnForwardRegression(sig,k))
 
                 # path = os.path.join(os.getcwd(),'uu'+str(segCounter)+".csv")
                 # f = open(path, 'w')
@@ -111,6 +116,7 @@ if __name__ == '__main__':
                 featureArray = np.array(featureVector)
                 featureArray = featureArray.reshape((1,len(featureVector)))
                 featureArray = tools.standardise(featureArray,meanValue,stdValue)
+                # print(featureArray)
                 svmOutput = model.predict(featureArray)
                 print(rr.printOutput(svmOutput))
                 f=open('result.txt','w')
@@ -125,6 +131,7 @@ if __name__ == '__main__':
                 featureArray = featureArray.reshape((1,len(featureVector)))
                 featureArray = tools.standardise(featureArray,meanValue,stdValue)
                 resultVector = rr.printResults(featureArray, model)'''
+
                 
                 # for item in featureVector:
                 #     fl.write(str(item))
@@ -151,20 +158,22 @@ if __name__ == '__main__':
                         plt.ylabel('value')
                         plt.show()'''
                 # Save signal segment as csv file
-                path = os.path.join(segCounter, ".csv")
-                with open(path, 'a') as f:
-                    csv_write = csv.writer(f)
-                    for a in signalSegment:
-                        csv_write.writerow(a)
-            if valid(data):
-                print(data)
-                csv_write.writerow(data)
+                # path = os.path.join(segCounter, ".csv")
+                # with open(path, 'a') as f:
+                #     csv_write = csv.writer(f)
+                #     for a in signalSegment:
+                #         csv_write.writerow(a)
+            # if valid(data):
+            #     print(data)
+            #     csv_write.writerow(data)
                 # Re-initialize status and signal segment
                 recordTimesCounter = 0
                 valid = False
                 recordOrNot = False
                 for sigList in signalSegment:
-                    sigList = []
+                    sigList.clear()
+                smoothSig.clear()
+                bufferList=[]
 
         # Read valid data from serial
         if recordOrNot:

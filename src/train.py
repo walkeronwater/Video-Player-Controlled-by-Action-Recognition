@@ -15,11 +15,38 @@ from model import model_ann
 from keras.models import load_model
 import recognitionResults as rr
 
+def addNoise(data, scale):
+    mu=0
+    sigma=scale
+    noise = np.random.normal(mu, sigma, len(data))
+    # noise = np.random.gauss(0,scale,len(data))
+    augmented_data = data + noise
+    # Cast back to same data type
+    augmented_data = augmented_data.astype(type(data[0]))
+    return augmented_data
+
+def scale(signals):
+    signals = np.array(signals)
+
+    # for channel, signal in signals:
+    #     s = np.std(signal)
+    #     u = np.mean(signal)
+    #     signals[channel] = (signal - u) / s
+
+    # return signals
+    min_max_scaler = preprocessing.MinMaxScaler()
+    return min_max_scaler.fit_transform(signals).tolist()
+
+
 # model = load_model('./src/ML_models/test2.h5')
-folderPath = os.path.abspath('./DataSet/newFromRealTime/')
+folderPath1 = os.path.abspath('./DataSet/newFromRealTime/hyqData')
+folderPath2 = os.path.abspath('./DataSet/newFromRealTime/hyqData321')
+folderPath2 = os.path.abspath('./DataSet/newFromRealTime/sgf2503')
+# folderPath2 = os.path.abspath('./DataSet/newFromRealTime/zjh323')
 filePathList=[]
 data=[]
-filePathList.append(glob.glob(os.path.join(folderPath, "*_log.csv")))
+filePathList.append(glob.glob(os.path.join(folderPath1, "*_log.csv")))
+filePathList.append(glob.glob(os.path.join(folderPath2, "*_log.csv")))
 csvData={'lr': [] , 'rr': [], 'lw': [], 'rw': [], 'fi': []}
 recordLength=300
 for filePathListIndex in filePathList:
@@ -43,11 +70,11 @@ for filePathListIndex in filePathList:
             # sigSegment.clear()
 
 '''保证每个动作训练数据量一样'''
-'''csvLength=[]
+csvLength=[]
 for i in csvData.keys():
     csvLength.append(len(csvData[i]))
 print(min(csvLength))
-actionLength = min(csvLength)'''
+actionLength = min(csvLength)
 
 # len(csvData['lr']) -> 动作的次数: 20
 # len(csvData['lr'][2]) -> 3
@@ -84,12 +111,13 @@ for index in csvData.keys():
                 for item in featureVector:
                     fl.write(str(item))
                     fl.write(',')
-                fl.write(str(index))
+                fl.write(str(labelSwitch(index)))
                 fl.write('\n')
         # if index=='fi':
         #     print(len(featureVector))
 
-
+# print('label matrix: ',end=' ')
+# print(labelMatrix)
 
 featureMatrix = np.array(featureMatrix)
 print(featureMatrix.shape)
@@ -195,3 +223,78 @@ plt.show()
 
 model.save('ann_model.h5')
 
+def plot_confusion_matrix(cm, savename, title='Confusion Matrix'):
+
+    plt.figure(figsize=(12, 8), dpi=100)
+    np.set_printoptions(precision=2)
+
+    # 在混淆矩阵中每格的概率值
+    ind_array = np.arange(len(classes))
+    x, y = np.meshgrid(ind_array, ind_array)
+    for x_val, y_val in zip(x.flatten(), y.flatten()):
+        c = cm[y_val][x_val]
+        if c > 0.001:
+            plt.text(x_val, y_val, "%0.2f" % (c,), color='red', fontsize=15, va='center', ha='center')
+    
+    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.binary)
+    plt.title(title)
+    plt.colorbar()
+    xlocations = np.array(range(len(classes)))
+    plt.xticks(xlocations, classes, rotation=90)
+    plt.yticks(xlocations, classes)
+    plt.ylabel('Actual label')
+    plt.xlabel('Predict label')
+    
+    # offset the tick
+    tick_marks = np.array(range(len(classes))) + 0.5
+    plt.gca().set_xticks(tick_marks, minor=True)
+    plt.gca().set_yticks(tick_marks, minor=True)
+    plt.gca().xaxis.set_ticks_position('none')
+    plt.gca().yaxis.set_ticks_position('none')
+    plt.grid(True, which='minor', linestyle='-')
+    plt.gcf().subplots_adjust(bottom=0.15)
+    
+    # show confusion matrix
+    plt.savefig(savename, format='png')
+    plt.show()
+
+y_test_predict = model.predict(x_test)
+# print(y_test_predict.shape)
+# print(y_test_predict[0])
+# print(y_test.shape)
+# print(y_test[0])
+y_test_predictList=[]
+y_testList=[]
+for i in range(y_test_predict.shape[0]):
+    # print(np.argmax(y_test_predict[i]))
+    y_test_predictList.append(np.argmax(y_test_predict[i]))
+# print(y_test_predictList)
+
+for i in range(y_test.shape[0]):
+    y_testList.extend(y_test[i].tolist())
+# print(y_testList)
+
+
+# from sklearn.metrics import confusion_matrix
+# C=confusion_matrix(y_test_predictList, y_testList)
+# # print(C)
+# classes = ['LR', 'RR', 'LW', 'RW', 'FI']
+# plot_confusion_matrix(C*5, 'confusion_matrix.png', title='Confusion matrix')
+
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
+
+prediction = model.predict(x_test)
+
+prediction = np.argmax(prediction, axis=1)
+
+labels = ['LR', 'RR', 'LW', 'RW', 'Fist']
+
+cm = confusion_matrix(y_test_predictList, y_testList)
+
+print(cm)
+
+plt.imshow(cm, cmap='binary')
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels = labels)
+print(classification_report(y_testList, y_test_predictList))
+disp.plot()
+plt.show()

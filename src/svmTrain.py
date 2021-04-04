@@ -96,10 +96,12 @@ from keras.models import load_model
 import recognitionResults as rr
 
 # model = load_model('./src/ML_models/test2.h5')
-folderPath = os.path.abspath('./DataSet/newFromRealTime/')
+folderPath1 = os.path.abspath('./DataSet/newFromRealTime/hyqData')
+folderPath2 = os.path.abspath('./DataSet/newFromRealTime/hyqData321')
 filePathList=[]
 data=[]
-filePathList.append(glob.glob(os.path.join(folderPath, "*_log.csv")))
+filePathList.append(glob.glob(os.path.join(folderPath1, "*_log.csv")))
+filePathList.append(glob.glob(os.path.join(folderPath2, "*_log.csv")))
 csvData={'lr': [] , 'rr': [], 'lw': [], 'rw': [], 'fi': []}
 recordLength = 300
 scales=[0.01, 0.02, 0.1, 0.2, 0.5]
@@ -132,11 +134,11 @@ for filePathListIndex in filePathList:
             # sigSegment.clear()
 
 '''保证每个动作训练数据量一样'''
-csvLength=[]
-for i in csvData.keys():
-    csvLength.append(len(csvData[i]))
-print(min(csvLength))
-actionLength = min(csvLength)
+# csvLength=[]
+# for i in csvData.keys():
+#     csvLength.append(len(csvData[i]))
+# print(min(csvLength))
+# actionLength = min(csvLength)
 
 # 划窗
 
@@ -148,7 +150,7 @@ for index in csvData.keys():
         featureLog = index+'_feature.csv'
         fl = open(featureLog, 'w')
     if True: #index !='rr':
-        for i in range(actionLength):
+        for i in range(len(csvData[index])):
             featureVector = getFeatureVector(csvData[index][i])
             # print(len(featureVector))
             featureMatrix.append(featureVector)
@@ -231,7 +233,7 @@ clf.fit(x_train, y_train.ravel())
 
 import joblib
 joblib.dump(clf, "svm_model.pkl")
-print(clf.predict(x_validate))
+# print(clf.predict(x_validate))
 # print(y_validate.ravel())
 
 print('Train acc:'+str(clf.score(x_train, y_train))) 

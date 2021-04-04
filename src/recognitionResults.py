@@ -12,7 +12,6 @@ def printResults(featureVector, model):
         motionIndex = 5
     result = "%s" %(motionList[motionIndex])
 
-    # result=1
     print('###########')
     print(result)
     print('###########')
@@ -25,18 +24,17 @@ def printResults(featureVector, model):
 
 def printResultsCNN(rawSignal, model):
     predictResult = nn.cnnClassifier(rawSignal, model)
-    if np.max(predictResult) > 0.5:
+    if np.max(predictResult) > 0.4:
         motionIndex = int(np.argmax(predictResult))
     else:
         motionIndex = 5
-    result = "%s is detected." % (motionList[motionIndex])
+    result = "%s" % (motionList[motionIndex])
 
-    # result=1
     print('###########')
     print(result)
     print('###########')
     
-    return predictResult.tolist()
+    return motionIndex
 
 
 
